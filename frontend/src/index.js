@@ -51,7 +51,7 @@ client.on("message", function(message) {
         message.reply("User not found. Please register first.") //this checks if data for the user has already been created
       } else {
       var newName = args.toString();
-      userFile[userId].name = newName;
+      userFile[userId].name = newName.replace(/,/g, ' ');
       fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
       message.reply(`Player name updated to ${userFile[userId].name}!`);
       }
@@ -118,7 +118,7 @@ client.on("message", function(message) {
       var userFile = JSON.parse(userRead);
       var userId = message.author.id;
       if (!userFile[userId]) { //this checks if data for the user has already been created
-        userFile[userId] = {name: "N/A", win: 0, loss: 0}; //if not, create it
+        userFile[userId] = {name: "N/A", win: 0, loss: 0, avg: 0}; //if not, create it
         fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
         message.reply("You have been registered!");
       }
