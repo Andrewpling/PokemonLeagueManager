@@ -1,20 +1,34 @@
 {
   "104609053686120448": {
-    "name": "I fixed it",
-    "win": 2,
-    "loss": 0,
-    "avg": 2
+    "name": "Greg's peepee",
+    "win": 13,
+    "loss": 2,
+    "avg": 6.5,
+    "kills": 23,
+    "deaths": 1
   },
   "158349093087739905": {
     "name": "Big Cock",
     "win": 5,
     "loss": 0,
-    "avg": 5
+    "avg": 5,
+    "kills": 0,
+    "deaths": 0
   },
   "168197552712187906": {
     "name": "smol cock",
     "win": 1,
     "loss": 0,
-    "avg": 1
+    "avg": 1,
+    "kills": 0,
+    "deaths": 0
+  },
+  "631642274681323541": {
+    "name": "N/A",
+    "win": 0,
+    "loss": 0,
+    "avg": 0,
+    "kills": 0,
+    "deaths": 0
   }
 }

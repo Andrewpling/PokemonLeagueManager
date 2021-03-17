@@ -48,77 +48,111 @@ client.on("message", function(message) {
     //command to change your username
     else if (command === "name") {
       if (!userFile[userId]) {
-        message.reply("User not found. Please register first.") //this checks if data for the user has already been created
-      } else {
-      var newName = args.toString();
-      userFile[userId].name = newName.replace(/,/g, ' ');
-      fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
-      message.reply(`Player name updated to ${userFile[userId].name}!`);
+        message.reply("User not found. Please register first.")
+      } 
+      else {
+        var newName = args.toString();
+        userFile[userId].name = newName.replace(/,/g, ' ');
+        fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
+        message.reply(`Player name updated to ${userFile[userId].name}!`);
       }
     }
 
     //command to add a win
-    else if (command === "win"){
-      //var userId = message.author.id;
+    else if (command === "won"){
       if (!userFile[userId]) {
-        message.reply("User not found. Please register first.") //this checks if data for the user has already been created
-      } else {
-        //as an example, I will give the owner of the id 50 xp and the role "Awesome Role"
-        //var nameVar = String(userFile[userId].name); //add 50 to their original xp
-        //var winVar = Number(userFile[userId].win) + 1;
-        //var lossVar = Number(userFile[userId].loss);
-        //userFile[userId] = {name: nameVar, win: winVar, loss: lossVar};
-        userFile[userId].win = userFile[userId].win + 1;
+        message.reply("User not found. Please register first.")
+      } 
+      //else {
+        /*userFile[userId].win = userFile[userId].win + 1;
         userFile[userId].avg = average(userFile[userId].win, userFile[userId].loss);
         fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
-        //console.log(`Changed that player's xp to ${xppVar} and gave him the role ${roleToGive}`)
-    
-    
-      /*const name = message.author.id;
-      player.playerWins++;
-      average();*/
         message.reply(`Congrats, ${userFile[userId].name}, you now have ${userFile[userId].win} total wins!`);
-        
+      }*/
+      else{
+        var numWins = args.toString();
+        if(isNaN(Number(numWins)))
+          message.reply(`${numWins} is not a number.`);
+        else{
+          userFile[userId].win += Number(numWins);
+          userFile[userId].avg = average(userFile[userId].win, userFile[userId].loss);
+          message.reply(`Added ${numWins} to your win count!`);
+          fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
+        }
       }
     }
 
     //command to add a loss
-    else if (command === "lose"){
+    else if (command === "lost"){
       if (!userFile[userId]) {
-        message.reply("User not found. Please register first.") //this checks if data for the user has already been created
-      } else {
-        userFile[userId].loss = userFile[userId].loss + 1;
-        userFile[userId].avg = average(userFile[userId].win, userFile[userId].loss);
-        fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
-        message.reply(`That's too bad, ${userFile[userId].name}, you now have ${userFile[userId].loss} losses.`)
-        //average(userFile, userId);
+        message.reply("User not found. Please register first.")
+      } 
+      else{
+        var numLosses = args.toString();
+        if(isNaN(Number(numLosses)))
+          message.reply(`${numLosses} is not a number.`);
+        else{
+          userFile[userId].loss += Number(numLosses);
+          userFile[userId].avg = average(userFile[userId].win, userFile[userId].loss);
+          message.reply(`Added ${numLosses} to your loss count.`);
+          fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
+        }
       }
-      
+    }
+
+    //add one kill or more to player stats
+    else if (command === "killed"){
+      if(!userFile[userId]){
+        message.reply("User not found. Please register first.")
+      } 
+      else{
+        var numKills = args.toString();
+        if(isNaN(Number(numKills)))
+          message.reply(`${numKills} is not a number.`);
+        else{
+          userFile[userId].kills += Number(numKills);
+          message.reply(`Added ${numKills} to your kill count!`);
+          fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
+        }
+      }
+    }
+
+    //adds one death or more to player stats
+    else if (command === "died"){
+      if(!userFile[userId]){
+        message.reply("User not found. Please register first.")
+      } else{
+        var numDeaths = args.toString();
+        if(isNaN(Number(numDeaths)))
+          message.reply(`${numDeaths} is not a number.`);
+        else{
+          userFile[userId].deaths += Number(numDeaths);
+          message.reply(`Added ${numDeaths} to your death count.`);
+          fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
+        }
+      }
     }
 
     //display list of player info for a single user
     else if (command === "info"){
-      message.reply(`\nPlayer Name: ${userFile[userId].name}\n` + `Wins: ${userFile[userId].win}\n` + `Losses: ${userFile[userId].loss}\n` + `W/L Ratio: ${userFile[userId].avg}`);
+      message.reply(`\nPlayer Name: ${userFile[userId].name}\n` + `Kills: ${userFile[userId].kills}\n` + `Deaths: ${userFile[userId].deaths}\n` + `Wins: ${userFile[userId].win}\n` + `Losses: ${userFile[userId].loss}\n` + `W/L Ratio: ${userFile[userId].avg}`);
     }
-
     else if (command === "help"){
       var commands = "";
       for(var i = 0; i < commandList.length; i++){
-        //return `${prefix}${commandList[i]}`;
         commands = commands + `${prefix}${commandList[i]}\n`;
       }
       message.channel.send('**' + commands + '**');
-      
     }
 
-    //command to register a user
+    //command to register a user if not already registered
     else if (command === "register"){
       var userPath = '../../backend/UserData.json';
       var userRead = fs.readFileSync(userPath);
       var userFile = JSON.parse(userRead);
       var userId = message.author.id;
-      if (!userFile[userId]) { //this checks if data for the user has already been created
-        userFile[userId] = {name: "N/A", win: 0, loss: 0, avg: 0}; //if not, create it
+      if (!userFile[userId]) {
+        userFile[userId] = {name: "N/A", win: 0, loss: 0, avg: 0, kills: 0, deaths: 0};
         fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
         message.reply("You have been registered!");
       }
@@ -129,12 +163,10 @@ client.on("message", function(message) {
 
     //command to clear player data
     else if (command === "reset"){
-      userFile[userId] = {name: "N/A", win: 0, loss: 0, avg: 0};
+      userFile[userId] = {name: "N/A", win: 0, loss: 0, avg: 0, kills: 0, deaths: 0};
       fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
       message.reply("Name and stats reset.")
     }
-
-
   });
 
 client.login(config.BOT_TOKEN);
