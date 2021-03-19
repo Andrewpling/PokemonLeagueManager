@@ -1,6 +1,7 @@
 const Discord = require("discord.js");
 const config = require("./config.json");
 const fs = require('fs');
+const sqlite3 = require('sqlite3').verbose();
 
 const client = new Discord.Client();
 
@@ -10,6 +11,33 @@ const commandList = ["died", "help", "info", "killed [number]", "lost [number]",
 const commandDesc = ["Adds deaths to player stats", "Displays list of commands", "Displays player stats", "Adds kills to player stats",
   "Adds losses to player stats", "Changes player name", "Simple test command to show server response time", "Register player",
   "Clears player info", "Adds wins to player stats"];
+
+
+var dataFile = "../../backend/playerData.db";
+var createPlayer = "CREATE TABLE IF NOT EXISTS player(name TEXT NOT NULL, kills TEXT NOT NULL, deaths TEXT NOT NULL, kd_ratio TEXT NOT NULL, wins TEXT NOT NULL, losses TEXT NOT NULL, wl_ratio TEXT NOT NULL)";
+var database = new sqlite3.Database(dataFile, sqlite3.OPEN_READWRITE);
+var insert = 'INSERT INTO player VALUES(?,?,?,?,?,?,?)';
+
+
+client.on("ready", function(ready){
+  database.run(createPlayer, function (err, result) {
+
+    if (err) throw err;
+    console.log("Database created");
+  });
+  var data = database.prepare(insert);
+  data.run(1, 2, 3, 4, 5, 6, 7); //insert stuff into database row
+  data.finalize(); //finalize it
+  // database.close(); //close the database
+
+  database.close();
+  
+});
+
+
+
+
+
 
 //function to average players' wins and losses
 function average(w, l){
