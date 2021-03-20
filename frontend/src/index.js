@@ -1,7 +1,13 @@
 const Discord = require("discord.js");
 const config = require("./config.json");
 const fs = require('fs');
-const sqlite3 = require('sqlite3').verbose();
+
+// import Discord from "discord.js";
+// import config from "./config.json";
+// import fs from "fs";
+//const sqlite3 = require('sqlite3').verbose();
+const help = require('./commands/help.js');
+// import {displayCommands} from ('./commands/help.js');
 
 const client = new Discord.Client();
 
@@ -13,10 +19,11 @@ const commandDesc = ["Adds deaths to player stats", "Displays list of commands",
   "Clears player info", "Adds wins to player stats"];
 
 
-var dataFile = "../../backend/playerData.db";
+/*var dataFile = "../../backend/playerData.db";
 var createPlayer = "CREATE TABLE IF NOT EXISTS player(name TEXT NOT NULL, kills TEXT NOT NULL, deaths TEXT NOT NULL, kd_ratio TEXT NOT NULL, wins TEXT NOT NULL, losses TEXT NOT NULL, wl_ratio TEXT NOT NULL)";
 var database = new sqlite3.Database(dataFile, sqlite3.OPEN_READWRITE);
 var insert = 'INSERT INTO player VALUES(?,?,?,?,?,?,?)';
+
 
 
 client.on("ready", function(ready){
@@ -32,7 +39,7 @@ client.on("ready", function(ready){
 
   database.close();
   
-});
+});*/
 
 
 
@@ -50,11 +57,11 @@ function average(w, l){
 };
 
 //function to display a full list of commands
-function displayCommands(){
-  for(var i = 0; i < commandList.length; i++){
-    return `${prefix}${commandList[i]}`;
-  }
-};
+// function displayCommands(){
+//   for(var i = 0; i < commandList.length; i++){
+//     return `${prefix}${commandList[i]}`;
+//   }
+// };
 
 //begins bot functionality
 client.on("message", function(message) {
@@ -171,11 +178,16 @@ client.on("message", function(message) {
 
   //display list of commands
   else if (command === "help"){
+
     var commands = "";
-    for(var i = 0; i < commandList.length; i++){
-      commands = commands + `${prefix}${commandList[i]}: ${commandDesc[i]}\n`;
-    }
+    // for(var i = 0; i < commandList.length; i++){
+    //   commands = commands + `${prefix}${commandList[i]}: ${commandDesc[i]}\n`;
+    // }
+    // message.channel.send(`\`\`\`${commands}\`\`\``);
+    //displayCommands();
+    commands = help.displayCommands();
     message.channel.send(`\`\`\`${commands}\`\`\``);
+
   }
 
   //command to register a user if not already registered
