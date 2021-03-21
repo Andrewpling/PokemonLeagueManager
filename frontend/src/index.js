@@ -7,6 +7,7 @@ const fs = require('fs');
 // import fs from "fs";
 //const sqlite3 = require('sqlite3').verbose();
 const help = require('./commands/help.js');
+const register = require('./commands/register.js');
 // import {displayCommands} from ('./commands/help.js');
 
 const client = new Discord.Client();
@@ -192,16 +193,16 @@ client.on("message", function(message) {
 
   //command to register a user if not already registered
   else if (command === "register"){
-    var userPath = '../../backend/UserData.json';
-    var userRead = fs.readFileSync(userPath);
-    var userFile = JSON.parse(userRead);
-    var userId = message.author.id;
-    if (!userFile[userId]) {
-      userFile[userId] = {name: "N/A", win: 0, loss: 0, avg: 0, kills: 0, deaths: 0};
-      fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
+    // var userPath = '../../backend/UserData.json';
+    // var userRead = fs.readFileSync(userPath);
+    // var userFile = JSON.parse(userRead);
+    // var userId = message.author.id;
+    if (register.register(message.author.id)) {
+      // userFile[userId] = {name: "N/A", win: 0, loss: 0, avg: 0, kills: 0, deaths: 0};
+      // fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
       message.reply("You have been registered!");
     }
-    else{
+    else if (!register.register(message.author.id)){
       message.reply("User already registered")
     }
   }
