@@ -3,10 +3,11 @@ const Discord = require("discord.js");
 const fs = require('fs');
 const config = require('../config.json');
 
-var userPath = '../../../backend/UserData.json';
+var userPath = '../../backend/UserData.json';
 var userRead = fs.readFileSync(userPath);
 
 var userFile = JSON.parse(userRead);
+//console.log('Path of file in parent dir:', require('path').resolve(__dirname, '../../../../PokemonLeagueManager'));
 
 module.exports = {
     register: function(user){
