@@ -8,6 +8,8 @@ const fs = require('fs');
 //const sqlite3 = require('sqlite3').verbose();
 const help = require('./commands/help.js');
 const register = require('./commands/register.js');
+const name = require('./commands/name.js');
+const { changeName } = require("./commands/name.js");
 // import {displayCommands} from ('./commands/help.js');
 
 const client = new Discord.Client();
@@ -86,17 +88,28 @@ client.on("message", function(message) {
 
   //command to change your username
   else if (command === "name") {
-    if (!userFile[userId]) {
-      message.reply("User not found. Please register first.")
-    } 
-    else {
-      var newName = args.toString();
-      userFile[userId].name = newName.replace(/,/g, ' ');
-      fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
-      message.reply(`Player name updated to ${userFile[userId].name}!`);
+    if(!userFile[userId]){
+      message.reply("User not found. Please register first.");
     }
+    else{
+      //userFile[userId].name = changeName(userId, args.toString());
+      name.changeName(userId, args.toString());
+      //fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
+      message.reply(`Changed name to ${userFile[userId].name}`);
+    }
+    //console.log(userFile[userId].name);
+    // if (!name.changeName(userId, args.toString())) {
+    //   message.reply("User not found. Please register first.")
+    // } 
+    // else if(name.changeName(userId, args.toString())){
+    //   // var newName = args.toString();
+    //   // userFile[userId].name = newName.replace(/,/g, ' ');
+    //   // fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
+    //   // message.reply(`Player name updated to ${userFile[userId].name}!`);
+    //   console.log(userFile[userId].name);
+    
   }
-
+  
   //command to add a win
   else if (command === "won"){
     if (!userFile[userId]) {
@@ -213,6 +226,6 @@ client.on("message", function(message) {
     fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
     message.reply("Name and stats reset.")
   }
+  
 });
-
 client.login(config.BOT_TOKEN);
