@@ -2,6 +2,16 @@ const Discord = require("discord.js");
 const config = require("./config.json");
 const fs = require('fs');
 
+// import Discord from "discord.js";
+// import config from "./config.json";
+// import fs from "fs";
+//const sqlite3 = require('sqlite3').verbose();
+const help = require('./commands/help.js');
+const register = require('./commands/register.js');
+const name = require('./commands/name.js');
+const { changeName } = require("./commands/name.js");
+// import {displayCommands} from ('./commands/help.js');
+
 const client = new Discord.Client();
 
 const prefix = "=";
@@ -10,6 +20,34 @@ const commandList = ["died", "help", "info", "killed [number]", "lost [number]",
 const commandDesc = ["Adds deaths to player stats", "Displays list of commands", "Displays player stats", "Adds kills to player stats",
   "Adds losses to player stats", "Changes player name", "Simple test command to show server response time", "Register player",
   "Clears player info", "Adds wins to player stats"];
+
+
+/*var dataFile = "../../backend/playerData.db";
+var createPlayer = "CREATE TABLE IF NOT EXISTS player(name TEXT NOT NULL, kills TEXT NOT NULL, deaths TEXT NOT NULL, kd_ratio TEXT NOT NULL, wins TEXT NOT NULL, losses TEXT NOT NULL, wl_ratio TEXT NOT NULL)";
+var database = new sqlite3.Database(dataFile, sqlite3.OPEN_READWRITE);
+var insert = 'INSERT INTO player VALUES(?,?,?,?,?,?,?)';
+
+
+
+client.on("ready", function(ready){
+  database.run(createPlayer, function (err, result) {
+
+    if (err) throw err;
+    console.log("Database created");
+  });
+  var data = database.prepare(insert);
+  data.run(1, 2, 3, 4, 5, 6, 7); //insert stuff into database row
+  data.finalize(); //finalize it
+  // database.close(); //close the database
+
+  database.close();
+  
+});*/
+
+
+
+
+
 
 //function to average players' wins and losses
 function average(w, l){
@@ -22,11 +60,11 @@ function average(w, l){
 };
 
 //function to display a full list of commands
-function displayCommands(){
-  for(var i = 0; i < commandList.length; i++){
-    return `${prefix}${commandList[i]}`;
-  }
-};
+// function displayCommands(){
+//   for(var i = 0; i < commandList.length; i++){
+//     return `${prefix}${commandList[i]}`;
+//   }
+// };
 
 //begins bot functionality
 client.on("message", function(message) {
@@ -50,17 +88,28 @@ client.on("message", function(message) {
 
   //command to change your username
   else if (command === "name") {
-    if (!userFile[userId]) {
-      message.reply("User not found. Please register first.")
-    } 
-    else {
-      var newName = args.toString();
-      userFile[userId].name = newName.replace(/,/g, ' ');
-      fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
-      message.reply(`Player name updated to ${userFile[userId].name}!`);
+    if(!userFile[userId]){
+      message.reply("User not found. Please register first.");
     }
+    else{
+      //userFile[userId].name = changeName(userId, args.toString());
+      name.changeName(userId, args.toString());
+      //fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
+      message.reply(`Changed name to ${userFile[userId].name}`);
+    }
+    //console.log(userFile[userId].name);
+    // if (!name.changeName(userId, args.toString())) {
+    //   message.reply("User not found. Please register first.")
+    // } 
+    // else if(name.changeName(userId, args.toString())){
+    //   // var newName = args.toString();
+    //   // userFile[userId].name = newName.replace(/,/g, ' ');
+    //   // fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
+    //   // message.reply(`Player name updated to ${userFile[userId].name}!`);
+    //   console.log(userFile[userId].name);
+    
   }
-
+  
   //command to add a win
   else if (command === "won"){
     if (!userFile[userId]) {
@@ -143,25 +192,30 @@ client.on("message", function(message) {
 
   //display list of commands
   else if (command === "help"){
+
     var commands = "";
-    for(var i = 0; i < commandList.length; i++){
-      commands = commands + `${prefix}${commandList[i]}: ${commandDesc[i]}\n`;
-    }
+    // for(var i = 0; i < commandList.length; i++){
+    //   commands = commands + `${prefix}${commandList[i]}: ${commandDesc[i]}\n`;
+    // }
+    // message.channel.send(`\`\`\`${commands}\`\`\``);
+    //displayCommands();
+    commands = help.displayCommands();
     message.channel.send(`\`\`\`${commands}\`\`\``);
+
   }
 
   //command to register a user if not already registered
   else if (command === "register"){
-    var userPath = '../../backend/UserData.json';
-    var userRead = fs.readFileSync(userPath);
-    var userFile = JSON.parse(userRead);
-    var userId = message.author.id;
-    if (!userFile[userId]) {
-      userFile[userId] = {name: "N/A", win: 0, loss: 0, avg: 0, kills: 0, deaths: 0};
-      fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
+    // var userPath = '../../backend/UserData.json';
+    // var userRead = fs.readFileSync(userPath);
+    // var userFile = JSON.parse(userRead);
+    // var userId = message.author.id;
+    if (register.register(message.author.id)) {
+      // userFile[userId] = {name: "N/A", win: 0, loss: 0, avg: 0, kills: 0, deaths: 0};
+      // fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
       message.reply("You have been registered!");
     }
-    else{
+    else if (!register.register(message.author.id)){
       message.reply("User already registered")
     }
   }
@@ -172,6 +226,6 @@ client.on("message", function(message) {
     fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
     message.reply("Name and stats reset.")
   }
+  
 });
-
 client.login(config.BOT_TOKEN);
