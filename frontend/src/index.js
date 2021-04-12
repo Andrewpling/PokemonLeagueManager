@@ -1,6 +1,29 @@
 const Discord = require("discord.js");
 const config = require("./config.json");
 const fs = require('fs');
+//database test
+const Sequelize = require('sequelize');
+const sequelize = new Sequelize('database', 'user', 'password', {
+	host: 'localhost',
+	dialect: 'sqlite',
+	logging: false,
+	// SQLite only
+	storage: '../../backend/database.sqlite',
+});
+
+const Tags = sequelize.define('tags', {
+	name: {
+		type: Sequelize.STRING,
+		unique: true,
+	},
+	description: Sequelize.TEXT,
+	username: Sequelize.STRING,
+	usage_count: {
+		type: Sequelize.INTEGER,
+		defaultValue: 0,
+		allowNull: false,
+	},
+});
 
 const client = new Discord.Client();
 
@@ -28,14 +51,18 @@ function displayCommands(){
   }
 };
 
+client.once('ready', () =>{
+  Tags.sync();
+});
+
 //begins bot functionality
-client.on("message", function(message) {
+client.on("message", async message => {
   if (message.author.bot) return;
   if (!message.content.startsWith(prefix)) return;
 
-  const commandBody = message.content.slice(prefix.length);
-  const args = commandBody.split(' ');
-  const command = args.shift().toLowerCase();
+  const input = message.content.slice(prefix.length).trim().split(' ');
+  const command = input.shift();
+  const commandArgs = input.join(' ');
 
   var userPath = '../../backend/UserData.json';
   var userRead = fs.readFileSync(userPath);
@@ -171,6 +198,82 @@ client.on("message", function(message) {
     userFile[userId] = {name: "N/A", win: 0, loss: 0, avg: 0, kills: 0, deaths: 0};
     fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
     message.reply("Name and stats reset.")
+  }
+
+  //database test methods
+
+  else if (command === "addTag"){
+    const splitArgs = commandArgs.split(' ');
+    const tagName = splitArgs.shift();
+    const tagDescription = splitArgs.join(' ');
+
+    try {
+      // equivalent to: INSERT INTO tags (name, description, username) values (?, ?, ?);
+      const tag = await Tags.create({
+        name: tagName,
+        description: tagDescription,
+        username: message.author.username,
+      });
+      return message.reply(`Tag ${tag.name} added.`);
+    }
+    catch (e) {
+      if (e.name === 'SequelizeUniqueConstraintError') {
+        return message.reply('That tag already exists.');
+      }
+      return message.reply('Something went wrong with adding a tag.');
+    }
+  }
+  else if (command === "fetchTag"){
+    const tagName = commandArgs;
+
+    // equivalent to: SELECT * FROM tags WHERE name = 'tagName' LIMIT 1;
+    const tag = await Tags.findOne({ where: { name: tagName } });
+    if (tag) {
+      // equivalent to: UPDATE tags SET usage_count = usage_count + 1 WHERE name = 'tagName';
+      tag.increment('usage_count');
+      return message.channel.send(tag.get('description'));
+    }
+    return message.reply(`Could not find tag: ${tagName}`);
+  }
+
+  else if (command == "editTag"){
+    const splitArgs = commandArgs.split(' ');
+    const tagName = splitArgs.shift();
+    const tagDescription = splitArgs.join(' ');
+
+    // equivalent to: UPDATE tags (description) values (?) WHERE name='?';
+    const affectedRows = await Tags.update({ description: tagDescription }, { where: { name: tagName } });
+    if (affectedRows > 0) {
+      return message.reply(`Tag ${tagName} was edited.`);
+    }
+    return message.reply(`Could not find a tag with name ${tagName}.`);
+  }
+
+  else if (command === "tagInfo"){
+    const tagName = commandArgs;
+
+    // equivalent to: SELECT * FROM tags WHERE name = 'tagName' LIMIT 1;
+    const tag = await Tags.findOne({ where: { name: tagName } });
+    if (tag) {
+      return message.channel.send(`${tagName} was created by ${tag.username} at ${tag.createdAt} and has been used ${tag.usage_count} times.`);
+    }
+    return message.reply(`Could not find tag: ${tagName}`);
+  }
+
+  else if (command === "listTags"){
+    // equivalent to: SELECT name FROM tags;
+    const tagList = await Tags.findAll({ attributes: ['name'] });
+    const tagString = tagList.map(t => t.name).join(', ') || 'No tags set.';
+    return message.channel.send(`List of tags: ${tagString}`);
+  }
+
+  else if (command === "deleteTag"){
+    const tagName = commandArgs;
+    // equivalent to: DELETE from tags WHERE name = ?;
+    const rowCount = await Tags.destroy({ where: { name: tagName } });
+    if (!rowCount) return message.reply('That tag did not exist.');
+
+    return message.reply('Tag deleted.');
   }
 });
 
