@@ -11,14 +11,37 @@ const sequelize = new Sequelize('database', 'user', 'password', {
 	storage: '../../backend/database.sqlite',
 });
 
-const Tags = sequelize.define('tags', {
+const Players = sequelize.define('players', {
 	name: {
 		type: Sequelize.STRING,
 		unique: true,
 	},
-	description: Sequelize.TEXT,
-	username: Sequelize.STRING,
-	usage_count: {
+	win: {
+		type: Sequelize.INTEGER,
+		defaultValue: 0,
+		allowNull: false,
+	},
+  loss: {
+		type: Sequelize.INTEGER,
+		defaultValue: 0,
+		allowNull: false,
+	},
+  avg: {
+		type: Sequelize.INTEGER,
+		defaultValue: 0,
+		allowNull: false,
+	},
+  kills: {
+		type: Sequelize.INTEGER,
+		defaultValue: 0,
+		allowNull: false,
+	},
+  deaths: {
+		type: Sequelize.INTEGER,
+		defaultValue: 0,
+		allowNull: false,
+	},
+  kd: {
 		type: Sequelize.INTEGER,
 		defaultValue: 0,
 		allowNull: false,
@@ -52,7 +75,7 @@ function displayCommands(){
 };
 
 client.once('ready', () =>{
-  Tags.sync();
+  Players.sync();
 });
 
 //begins bot functionality
@@ -179,17 +202,21 @@ client.on("message", async message => {
 
   //command to register a user if not already registered
   else if (command === "register"){
-    var userPath = '../../backend/UserData.json';
-    var userRead = fs.readFileSync(userPath);
-    var userFile = JSON.parse(userRead);
-    var userId = message.author.id;
-    if (!userFile[userId]) {
-      userFile[userId] = {name: "N/A", win: 0, loss: 0, avg: 0, kills: 0, deaths: 0};
-      fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
-      message.reply("You have been registered!");
+    const splitArgs = commandArgs.split(' ');
+    const playerName = splitArgs.shift();
+    try {
+      // equivalent to: INSERT INTO tags (name, description, username) values (?, ?, ?);
+      const tag = await Players.create({
+        name: playerName,
+      });
+      return message.reply(`Tag ${tag.name} added.`);
     }
-    else{
-      message.reply("User already registered")
+    catch (e) {
+      if (e.name === 'SequelizeUniqueConstraintError') {
+        return message.reply('That player already exists.');
+      }
+      return message.reply('Something went wrong with adding a player');
+
     }
   }
 
@@ -202,79 +229,79 @@ client.on("message", async message => {
 
   //database test methods
 
-  else if (command === "addTag"){
-    const splitArgs = commandArgs.split(' ');
-    const tagName = splitArgs.shift();
-    const tagDescription = splitArgs.join(' ');
+  // else if (command === "addTag"){
+  //   const splitArgs = commandArgs.split(' ');
+  //   const tagName = splitArgs.shift();
+  //   const tagDescription = splitArgs.join(' ');
 
-    try {
-      // equivalent to: INSERT INTO tags (name, description, username) values (?, ?, ?);
-      const tag = await Tags.create({
-        name: tagName,
-        description: tagDescription,
-        username: message.author.username,
-      });
-      return message.reply(`Tag ${tag.name} added.`);
-    }
-    catch (e) {
-      if (e.name === 'SequelizeUniqueConstraintError') {
-        return message.reply('That tag already exists.');
-      }
-      return message.reply('Something went wrong with adding a tag.');
-    }
-  }
-  else if (command === "fetchTag"){
-    const tagName = commandArgs;
+  //   try {
+  //     // equivalent to: INSERT INTO tags (name, description, username) values (?, ?, ?);
+  //     const tag = await Tags.create({
+  //       name: tagName,
+  //       description: tagDescription,
+  //       username: message.author.username,
+  //     });
+  //     return message.reply(`Tag ${tag.name} added.`);
+  //   }
+  //   catch (e) {
+  //     if (e.name === 'SequelizeUniqueConstraintError') {
+  //       return message.reply('That tag already exists.');
+  //     }
+  //     return message.reply('Something went wrong with adding a tag.');
+  //   }
+  // }
+  // else if (command === "fetchTag"){
+  //   const tagName = commandArgs;
 
-    // equivalent to: SELECT * FROM tags WHERE name = 'tagName' LIMIT 1;
-    const tag = await Tags.findOne({ where: { name: tagName } });
-    if (tag) {
-      // equivalent to: UPDATE tags SET usage_count = usage_count + 1 WHERE name = 'tagName';
-      tag.increment('usage_count');
-      return message.channel.send(tag.get('description'));
-    }
-    return message.reply(`Could not find tag: ${tagName}`);
-  }
+  //   // equivalent to: SELECT * FROM tags WHERE name = 'tagName' LIMIT 1;
+  //   const tag = await Tags.findOne({ where: { name: tagName } });
+  //   if (tag) {
+  //     // equivalent to: UPDATE tags SET usage_count = usage_count + 1 WHERE name = 'tagName';
+  //     tag.increment('usage_count');
+  //     return message.channel.send(tag.get('description'));
+  //   }
+  //   return message.reply(`Could not find tag: ${tagName}`);
+  // }
 
-  else if (command == "editTag"){
-    const splitArgs = commandArgs.split(' ');
-    const tagName = splitArgs.shift();
-    const tagDescription = splitArgs.join(' ');
+  // else if (command == "editTag"){
+  //   const splitArgs = commandArgs.split(' ');
+  //   const tagName = splitArgs.shift();
+  //   const tagDescription = splitArgs.join(' ');
 
-    // equivalent to: UPDATE tags (description) values (?) WHERE name='?';
-    const affectedRows = await Tags.update({ description: tagDescription }, { where: { name: tagName } });
-    if (affectedRows > 0) {
-      return message.reply(`Tag ${tagName} was edited.`);
-    }
-    return message.reply(`Could not find a tag with name ${tagName}.`);
-  }
+  //   // equivalent to: UPDATE tags (description) values (?) WHERE name='?';
+  //   const affectedRows = await Tags.update({ description: tagDescription }, { where: { name: tagName } });
+  //   if (affectedRows > 0) {
+  //     return message.reply(`Tag ${tagName} was edited.`);
+  //   }
+  //   return message.reply(`Could not find a tag with name ${tagName}.`);
+  // }
 
-  else if (command === "tagInfo"){
-    const tagName = commandArgs;
+  // else if (command === "tagInfo"){
+  //   const tagName = commandArgs;
 
-    // equivalent to: SELECT * FROM tags WHERE name = 'tagName' LIMIT 1;
-    const tag = await Tags.findOne({ where: { name: tagName } });
-    if (tag) {
-      return message.channel.send(`${tagName} was created by ${tag.username} at ${tag.createdAt} and has been used ${tag.usage_count} times.`);
-    }
-    return message.reply(`Could not find tag: ${tagName}`);
-  }
+  //   // equivalent to: SELECT * FROM tags WHERE name = 'tagName' LIMIT 1;
+  //   const tag = await Tags.findOne({ where: { name: tagName } });
+  //   if (tag) {
+  //     return message.channel.send(`${tagName} was created by ${tag.username} at ${tag.createdAt} and has been used ${tag.usage_count} times.`);
+  //   }
+  //   return message.reply(`Could not find tag: ${tagName}`);
+  // }
 
-  else if (command === "listTags"){
-    // equivalent to: SELECT name FROM tags;
-    const tagList = await Tags.findAll({ attributes: ['name'] });
-    const tagString = tagList.map(t => t.name).join(', ') || 'No tags set.';
-    return message.channel.send(`List of tags: ${tagString}`);
-  }
+  // else if (command === "listTags"){
+  //   // equivalent to: SELECT name FROM tags;
+  //   const tagList = await Tags.findAll({ attributes: ['name'] });
+  //   const tagString = tagList.map(t => t.name).join(', ') || 'No tags set.';
+  //   return message.channel.send(`List of tags: ${tagString}`);
+  // }
 
-  else if (command === "deleteTag"){
-    const tagName = commandArgs;
-    // equivalent to: DELETE from tags WHERE name = ?;
-    const rowCount = await Tags.destroy({ where: { name: tagName } });
-    if (!rowCount) return message.reply('That tag did not exist.');
+  // else if (command === "deleteTag"){
+  //   const tagName = commandArgs;
+  //   // equivalent to: DELETE from tags WHERE name = ?;
+  //   const rowCount = await Tags.destroy({ where: { name: tagName } });
+  //   if (!rowCount) return message.reply('That tag did not exist.');
 
-    return message.reply('Tag deleted.');
-  }
+  //   return message.reply('Tag deleted.');
+  // }
 });
 
 client.login(config.BOT_TOKEN);
