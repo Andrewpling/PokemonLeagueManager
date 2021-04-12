@@ -11,10 +11,14 @@ const sequelize = new Sequelize('database', 'user', 'password', {
 	storage: '../../backend/database.sqlite',
 });
 
-const Players = sequelize.define('players', {
+const Players = sequelize.define('players2', {
+  userId: {
+    type: Sequelize.STRING,
+    unique: true,
+  },
 	name: {
-		type: Sequelize.STRING,
-		unique: true,
+		type: Sequelize.STRING
+    //new value, check this one if db breaks
 	},
 	win: {
 		type: Sequelize.INTEGER,
@@ -83,9 +87,9 @@ client.on("message", async message => {
   if (message.author.bot) return;
   if (!message.content.startsWith(prefix)) return;
 
-  const input = message.content.slice(prefix.length).trim().split(' ');
-  const command = input.shift();
-  const commandArgs = input.join(' ');
+  const commandBody = message.content.slice(prefix.length);
+  const args = commandBody.split(' ');
+  const command = args.shift().toLowerCase();
 
   var userPath = '../../backend/UserData.json';
   var userRead = fs.readFileSync(userPath);
@@ -100,15 +104,21 @@ client.on("message", async message => {
 
   //command to change your username
   else if (command === "name") {
-    if (!userFile[userId]) {
-      message.reply("User not found. Please register first.")
-    } 
-    else {
-      var newName = args.toString();
-      userFile[userId].name = newName.replace(/,/g, ' ');
-      fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
-      message.reply(`Player name updated to ${userFile[userId].name}!`);
+    // if (!userFile[userId]) {
+    //   message.reply("User not found. Please register first.")
+    // } 
+    // else {
+    //   var newName = args.toString();
+    //   userFile[userId].name = newName.replace(/,/g, ' ');
+    //   fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
+    //   message.reply(`Player name updated to ${userFile[userId].name}!`);
+    // }
+    const newName = args.toString();
+    const affectedRows = await Players.update({ name: newName }, { where: { userId: message.author.id }});
+    if(affectedRows > 0){
+      return message.reply(`Changed name to ${newName}`);
     }
+    return message.reply("User not found. Please register first.");
   }
 
   //command to add a win
@@ -202,20 +212,22 @@ client.on("message", async message => {
 
   //command to register a user if not already registered
   else if (command === "register"){
-    const splitArgs = commandArgs.split(' ');
-    const playerName = splitArgs.shift();
+    console.log("register");
+    const newName = message.author.username;
     try {
       // equivalent to: INSERT INTO tags (name, description, username) values (?, ?, ?);
       const tag = await Players.create({
-        name: playerName,
+        userId: userId,
+        name: newName,
       });
       return message.reply(`Tag ${tag.name} added.`);
     }
     catch (e) {
       if (e.name === 'SequelizeUniqueConstraintError') {
-        return message.reply('That player already exists.');
+        message.reply('You have already registered.');
       }
-      return message.reply('Something went wrong with adding a player');
+      else
+        message.reply('Something went wrong with adding a player');
 
     }
   }
@@ -224,8 +236,26 @@ client.on("message", async message => {
   else if (command === "reset"){
     userFile[userId] = {name: "N/A", win: 0, loss: 0, avg: 0, kills: 0, deaths: 0};
     fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
-    message.reply("Name and stats reset.")
+    message.reply("Name and stats reset.");
   }
+
+  else if (command === "unregister"){
+    console.log("Hello");
+    // const tagName = args.toString();
+    const rowCount = await Players.destroy({ where : { userId: message.author.id }});
+    if(rowCount == false){
+      return message.reply("That player does not exist");
+    }
+    return message.reply("Tag deleted");
+  }
+
+  // else if (command === "deleteUser"){
+  //   const affectedRows = await Players.destroy({ where : { userId: message.author.id }});
+  //   if(affectedRows == 0){
+  //     return message.reply("Player doesn't exist");
+  //   } 
+  //   return message.reply("Player deleted");
+  // }
 
   //database test methods
 
@@ -276,32 +306,26 @@ client.on("message", async message => {
   //   return message.reply(`Could not find a tag with name ${tagName}.`);
   // }
 
-  // else if (command === "tagInfo"){
-  //   const tagName = commandArgs;
+  else if (command === "myinfo"){
+    console.log("tagInfo");
+    // const tagName = args.toString();
 
-  //   // equivalent to: SELECT * FROM tags WHERE name = 'tagName' LIMIT 1;
-  //   const tag = await Tags.findOne({ where: { name: tagName } });
-  //   if (tag) {
-  //     return message.channel.send(`${tagName} was created by ${tag.username} at ${tag.createdAt} and has been used ${tag.usage_count} times.`);
-  //   }
-  //   return message.reply(`Could not find tag: ${tagName}`);
-  // }
+    // equivalent to: SELECT * FROM tags WHERE name = 'tagName' LIMIT 1;
+    const tag = await Players.findOne({ where: { userId: message.author.id } });
+    if (tag) {
+      return message.channel.send(`${tag.name} was created by ${tag.username} at ${tag.createdAt} and has been used ${tag.usage_count} times.`);
+    }
+    return message.reply(`Could not find user`);
+  }
 
-  // else if (command === "listTags"){
-  //   // equivalent to: SELECT name FROM tags;
-  //   const tagList = await Tags.findAll({ attributes: ['name'] });
-  //   const tagString = tagList.map(t => t.name).join(', ') || 'No tags set.';
-  //   return message.channel.send(`List of tags: ${tagString}`);
-  // }
+  else if (command === "listplayers"){
+    // equivalent to: SELECT name FROM tags;
+    const tagList = await Players.findAll({ attributes: ['name'] });
+    const tagString = tagList.map(t => t.name).join(', ') || 'No tags set.';
+    return message.channel.send(`List of tags: ${tagString}`);
+  }
 
-  // else if (command === "deleteTag"){
-  //   const tagName = commandArgs;
-  //   // equivalent to: DELETE from tags WHERE name = ?;
-  //   const rowCount = await Tags.destroy({ where: { name: tagName } });
-  //   if (!rowCount) return message.reply('That tag did not exist.');
-
-  //   return message.reply('Tag deleted.');
-  // }
+  
 });
 
 client.login(config.BOT_TOKEN);
