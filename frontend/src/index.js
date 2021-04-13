@@ -64,7 +64,7 @@ const commandDesc = ["Adds deaths to player stats", "Displays list of commands",
 //function to average players' wins and losses
 function average(w, l){
   if(w != 0 && l != 0){
-    return w/l;
+    return (w/l).toFixed(2);
   } 
   else{
     return w;
@@ -114,59 +114,92 @@ client.on("message", async message => {
     //   message.reply(`Player name updated to ${userFile[userId].name}!`);
     // }
     const newName = args.toString();
-    const affectedRows = await Players.update({ name: newName }, { where: { userId: message.author.id }});
+    const affectedRows = await Players.update({ name: newName.replace(/,/g, ' ') }, { where: { userId: message.author.id }});
     if(affectedRows > 0){
-      return message.reply(`Changed name to ${newName}`);
+      return message.reply(`Changed name to ${newName.replace(/,/g, ' ')}`);
     }
     return message.reply("User not found. Please register first.");
   }
 
   //command to add a win
   else if (command === "won"){
-    if (!userFile[userId]) {
-      message.reply("User not found. Please register first.")
-    } 
+    const numWins = args.toString();
+    if(isNaN(Number(numWins)))
+      return message.reply(`${numWins} is not a number`);
+    else{
+      const player = await Players.findOne({where: {userId : message.author.id}});
+      const newNum = player.win + Number(numWins);
+      const affectedRows = await Players.update({ win: newNum, avg: average(newNum, player.loss)}, { where: { userId: message.author.id}});
+      if(affectedRows > 0){
+        if(Number(numWins) < 0)
+          return message.reply(`subtracted ${numWins.replace(/-/g, '')} wins`);
+        else
+          return message.reply(`added ${numWins} wins`);
+      }
+      return message.reply("User not found. Please register first.");
+    }
+  }
+    
+    // if (!userFile[userId]) {
+    //   message.reply("User not found. Please register first.");
+    // } 
     //else {
       /*userFile[userId].win = userFile[userId].win + 1;
       userFile[userId].avg = average(userFile[userId].win, userFile[userId].loss);
       fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
       message.reply(`Congrats, ${userFile[userId].name}, you now have ${userFile[userId].win} total wins!`);
     }*/
-    else{
-      var numWins = args.toString();
-      if(isNaN(Number(numWins)))
-        message.reply(`${numWins} is not a number.`);
-      else{
-        userFile[userId].win += Number(numWins);
-        userFile[userId].avg = average(userFile[userId].win, userFile[userId].loss);
-        message.reply(`Added ${numWins} to your win count!`);
-        fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
-      }
-    }
-  }
+    // else{
+    //   var numWins = args.toString();
+    //   if(isNaN(Number(numWins)))
+    //     message.reply(`${numWins} is not a number.`);
+    //   else{
+    //     userFile[userId].win += Number(numWins);
+    //     userFile[userId].avg = average(userFile[userId].win, userFile[userId].loss);
+    //     message.reply(`Added ${numWins} to your win count!`);
+    //     fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
+    //   }
+    // }
 
   //command to add a loss
   else if (command === "lost"){
-    if (!userFile[userId]) {
-      message.reply("User not found. Please register first.")
-    } 
+    const numLosses = args.toString();
+    if(isNaN(Number(numLosses)))
+      return message.reply(`${numLosses} is not a number`);
     else{
-      var numLosses = args.toString();
-      if(isNaN(Number(numLosses)))
-        message.reply(`${numLosses} is not a number.`);
-      else{
-        userFile[userId].loss += Number(numLosses);
-        userFile[userId].avg = average(userFile[userId].win, userFile[userId].loss);
-        message.reply(`Added ${numLosses} to your loss count.`);
-        fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
+      const player = await Players.findOne({where: {userId : message.author.id}});
+      const newNum = (player.loss + Number(numLosses));
+      const affectedRows = await Players.update({ loss: newNum, avg: average(player.win, newNum) }, { where: { userId: message.author.id}});
+      if(affectedRows > 0){
+        if(Number(numLosses) < 0)
+          return message.reply(`subtracted ${numLosses.replace(/-/g, '')} losses`);
+        else
+          return message.reply(`added ${numLosses} losses`);
       }
+      return message.reply("User not found. Please register first.");
     }
   }
+  // else if (command === "lost"){
+  //   if (!userFile[userId]) {
+  //     message.reply("User not found. Please register first.")
+  //   } 
+  //   else{
+  //     var numLosses = args.toString();
+  //     if(isNaN(Number(numLosses)))
+  //       message.reply(`${numLosses} is not a number.`);
+  //     else{
+  //       userFile[userId].loss += Number(numLosses);
+  //       userFile[userId].avg = average(userFile[userId].win, userFile[userId].loss);
+  //       message.reply(`Added ${numLosses} to your loss count.`);
+  //       fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
+  //     }
+  //   }
+  // }
 
   //add one kill or more to player stats
   else if (command === "killed"){
     if(!userFile[userId]){
-      message.reply("User not found. Please register first.")
+      message.reply("User not found. Please register first.");
     } 
     else{
       var numKills = args.toString();
@@ -198,7 +231,14 @@ client.on("message", async message => {
 
   //display list of player info for a single user
   else if (command === "info"){
-    message.reply(`\nPlayer Name: ${userFile[userId].name}\n` + `Kills: ${userFile[userId].kills}\n` + `Deaths: ${userFile[userId].deaths}\n` + `Wins: ${userFile[userId].win}\n` + `Losses: ${userFile[userId].loss}\n` + `W/L Ratio: ${userFile[userId].avg}`);
+    const playerName = args.toString().replace(/,/g, ' ');;
+
+    // equivalent to: SELECT * FROM tags WHERE name = 'tagName' LIMIT 1;
+    const tag = await Players.findOne({ where: { name: playerName } });
+    if (tag) {
+      return message.channel.send(`Name: ${tag.name}\nWins: ${tag.win}\nLosses: ${tag.loss}\nW/L: ${tag.avg}\nKills: ${tag.kills}\nDeaths: ${tag.deaths}\nK/D: ${tag.kd}`);
+    }
+    return message.reply(`Could not find user`);
   }
 
   //display list of commands
@@ -220,7 +260,7 @@ client.on("message", async message => {
         userId: userId,
         name: newName,
       });
-      return message.reply(`Tag ${tag.name} added.`);
+      return message.reply(` ${tag.name} registered.`);
     }
     catch (e) {
       if (e.name === 'SequelizeUniqueConstraintError') {
@@ -246,65 +286,9 @@ client.on("message", async message => {
     if(rowCount == false){
       return message.reply("That player does not exist");
     }
-    return message.reply("Tag deleted");
+    return message.reply("player deleted");
   }
 
-  // else if (command === "deleteUser"){
-  //   const affectedRows = await Players.destroy({ where : { userId: message.author.id }});
-  //   if(affectedRows == 0){
-  //     return message.reply("Player doesn't exist");
-  //   } 
-  //   return message.reply("Player deleted");
-  // }
-
-  //database test methods
-
-  // else if (command === "addTag"){
-  //   const splitArgs = commandArgs.split(' ');
-  //   const tagName = splitArgs.shift();
-  //   const tagDescription = splitArgs.join(' ');
-
-  //   try {
-  //     // equivalent to: INSERT INTO tags (name, description, username) values (?, ?, ?);
-  //     const tag = await Tags.create({
-  //       name: tagName,
-  //       description: tagDescription,
-  //       username: message.author.username,
-  //     });
-  //     return message.reply(`Tag ${tag.name} added.`);
-  //   }
-  //   catch (e) {
-  //     if (e.name === 'SequelizeUniqueConstraintError') {
-  //       return message.reply('That tag already exists.');
-  //     }
-  //     return message.reply('Something went wrong with adding a tag.');
-  //   }
-  // }
-  // else if (command === "fetchTag"){
-  //   const tagName = commandArgs;
-
-  //   // equivalent to: SELECT * FROM tags WHERE name = 'tagName' LIMIT 1;
-  //   const tag = await Tags.findOne({ where: { name: tagName } });
-  //   if (tag) {
-  //     // equivalent to: UPDATE tags SET usage_count = usage_count + 1 WHERE name = 'tagName';
-  //     tag.increment('usage_count');
-  //     return message.channel.send(tag.get('description'));
-  //   }
-  //   return message.reply(`Could not find tag: ${tagName}`);
-  // }
-
-  // else if (command == "editTag"){
-  //   const splitArgs = commandArgs.split(' ');
-  //   const tagName = splitArgs.shift();
-  //   const tagDescription = splitArgs.join(' ');
-
-  //   // equivalent to: UPDATE tags (description) values (?) WHERE name='?';
-  //   const affectedRows = await Tags.update({ description: tagDescription }, { where: { name: tagName } });
-  //   if (affectedRows > 0) {
-  //     return message.reply(`Tag ${tagName} was edited.`);
-  //   }
-  //   return message.reply(`Could not find a tag with name ${tagName}.`);
-  // }
 
   else if (command === "myinfo"){
     console.log("tagInfo");
@@ -313,7 +297,7 @@ client.on("message", async message => {
     // equivalent to: SELECT * FROM tags WHERE name = 'tagName' LIMIT 1;
     const tag = await Players.findOne({ where: { userId: message.author.id } });
     if (tag) {
-      return message.channel.send(`${tag.name} was created by ${tag.username} at ${tag.createdAt} and has been used ${tag.usage_count} times.`);
+      return message.channel.send(`Name: ${tag.name}\nWins: ${tag.win}\nLosses: ${tag.loss}\nW/L: ${tag.avg}\nKills: ${tag.kills}\nDeaths: ${tag.deaths}\nK/D: ${tag.kd}`);
     }
     return message.reply(`Could not find user`);
   }
