@@ -102,15 +102,6 @@ client.on("message", async message => {
 
   //command to change your username
   else if (command === "name") {
-    // if (!userFile[userId]) {
-    //   message.reply("User not found. Please register first.")
-    // } 
-    // else {
-    //   var newName = args.toString();
-    //   userFile[userId].name = newName.replace(/,/g, ' ');
-    //   fs.writeFileSync(userPath, JSON.stringify(userFile, null, 2));
-    //   message.reply(`Player name updated to ${userFile[userId].name}!`);
-    // }
     const newName = args.toString();
     const affectedRows = await Players.update({ name: newName.replace(/,/g, ' ') }, { where: { userId: message.author.id }});
     if(affectedRows > 0){
