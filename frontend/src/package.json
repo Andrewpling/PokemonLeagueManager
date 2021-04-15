@@ -17,6 +17,6 @@
   },
   "homepage": "https://github.com/Andrewpling/PokemonLeagueManager#readme",
   "dependencies": {
-    "discord.js": "^12.5.3"
+    "discord.js": "^12.5.1"
   }
 }
