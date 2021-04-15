@@ -65,6 +65,16 @@ const Players = sequelize.define('players2', {
 	},
 });
 
+// import Discord from "discord.js";
+// import config from "./config.json";
+// import fs from "fs";
+//const sqlite3 = require('sqlite3').verbose();
+const help = require('./commands/help.js');
+const register = require('./commands/register.js');
+const name = require('./commands/name.js');
+const { changeName } = require("./commands/name.js");
+// import {displayCommands} from ('./commands/help.js');
+
 const client = new Discord.Client();
 
 const prefix = "=";
@@ -85,6 +95,7 @@ client.once('ready', () =>{
   Commands.sync({ alter: true });
 });
 
+
 //begins bot functionality
 client.on("message", async message => {
   if (message.author.bot) return;
@@ -102,6 +113,7 @@ client.on("message", async message => {
 
   //command to change your username
   else if (command === "name") {
+
     const newName = args.toString();
     const affectedRows = await Players.update({ name: newName.replace(/,/g, ' ') }, { where: { userId: message.author.id }});
     if(affectedRows > 0){
@@ -109,7 +121,7 @@ client.on("message", async message => {
     }
     return message.reply("User not found. Please register first.");
   }
-
+  
   //command to add a win
   else if (command === "won"){
     const numWins = args.toString();
@@ -224,6 +236,7 @@ client.on("message", async message => {
 
   //command to register a user if not already registered
   else if (command === "register"){
+
     console.log("register");
     const newName = message.author.username;
     try {
@@ -239,7 +252,6 @@ client.on("message", async message => {
       }
       else
         message.reply('Something went wrong with adding a player');
-
     }
   }
 
@@ -277,5 +289,4 @@ client.on("message", async message => {
   }
   
 });
-
 client.login(config.BOT_TOKEN);
