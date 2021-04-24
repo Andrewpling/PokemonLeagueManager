@@ -1,8 +1,13 @@
 const Discord = require("discord.js");
 const config = require("./config.json");
 const fs = require('fs');
+
+const db = require('../../backend/models/matches');
+
 //database test
 const Sequelize = require('sequelize');
+const matchesFunction = require("../../backend/models/matches");
+const SetupMatches = require('./commands/SetupMatches');
 const sequelize = new Sequelize('database', 'user', 'password', {
 	host: 'localhost',
 	dialect: 'sqlite',
@@ -10,6 +15,7 @@ const sequelize = new Sequelize('database', 'user', 'password', {
 	// SQLite only
 	storage: '../../backend/database.sqlite',
 });
+// const { matches } = require('./commands/SetupMatches.js');
 
 const Commands = sequelize.define('commands', {
   commandName: {
@@ -98,10 +104,13 @@ function average(w, l){
 //     return `${prefix}${commandList[i]}`;
 //   }
 // };
+const Matches = matchesFunction.matches(sequelize, Sequelize.DataTypes);
 
 client.once('ready', () =>{
   Players.sync();
   Commands.sync({ alter: true });
+  Matches.sync();
+  // matches.sync();
 });
 
 //begins bot functionality
@@ -400,7 +409,10 @@ client.on("message", async message => {
 //         attributes: ['id', 'logo_version', 'logo_content_type', 'name', 'updated_at']
 //     });
 // };
-  
+  else if(command === 's'){
+
+    SetupMatches.matchMake(Matches, Players, sequelize);
+  }
 });
 
 client.login(config.BOT_TOKEN);
